@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farol — Competitividade de Compra · SIM Combustíveis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #F7F6F3;
+    --surface:   #FFFFFF;
+    --surface2:  #F0EFE9;
+    --border:    #E2E0D8;
+    --text:      #1E1D1A;
+    --text2:     #5F5E5A;
+    --text3:     #9C9A94;
+    --green:     #27500A;
+    --green-bg:  #EAF3DE;
+    --red:       #791F1F;
+    --red-bg:    #FCEBEB;
+    --sim:       #185FA5;
+    --ipiranga:  #C98A00;
+    --raizen:    #A32D2D;
+    --vibra:     #3B6D11;
+    --major:     #2C2C2A;
+    --spot:      #888780;
+    --radius:    10px;
+    --shadow:    0 1px 3px rgba(0,0,0,0.07);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* ── Layout ───────────────────────────────────────────── */
+  .page   { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
+  .header { display: flex; align-items: flex-start; justify-content: space-between;
+            flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header .sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .badge-update { font-size: 11px; background: var(--surface2); border: 1px solid var(--border);
+                  border-radius: 20px; padding: 4px 10px; color: var(--text2); white-space: nowrap; }
+
+  /* ── Toolbar ──────────────────────────────────────────── */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+             background: var(--surface); border: 1px solid var(--border);
+             border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px;
+             box-shadow: var(--shadow); }
+  .toolbar label { font-size: 12px; color: var(--text2); }
+  .toolbar select { font-size: 13px; padding: 6px 10px; border-radius: 7px;
+                    border: 1px solid var(--border); background: var(--bg);
+                    color: var(--text); cursor: pointer; }
+  .toolbar .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+  /* ── Tabs (dias) ──────────────────────────────────────── */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .tab { font-size: 13px; padding: 5px 14px; border-radius: 20px;
+         border: 1px solid var(--border); background: var(--surface);
+         color: var(--text2); cursor: pointer; transition: all .15s; }
+  .tab:hover { border-color: var(--text3); }
+  .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  /* ── Summary Cards ────────────────────────────────────── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+           gap: 12px; margin-bottom: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .card-label { font-size: 11px; color: var(--text2); text-transform: uppercase;
+                letter-spacing: .05em; margin-bottom: 6px; }
+  .card-value { font-size: 26px; font-weight: 600; line-height: 1; }
+  .card-sub   { font-size: 12px; color: var(--text2); margin-top: 5px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 500;
+          padding: 2px 8px; border-radius: 20px; }
+  .pill-green { background: var(--green-bg); color: var(--green); }
+  .pill-red   { background: var(--red-bg);   color: var(--red);   }
+  .pill-gray  { background: var(--surface2); color: var(--text2); }
+
+  /* ── Section titles ───────────────────────────────────── */
+  .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase;
+                   letter-spacing: .06em; color: var(--text3);
+                   margin: 28px 0 12px; }
+
+  /* ── Preços Grid ──────────────────────────────────────── */
+  .precos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                 gap: 12px; }
+  .preco-card { background: var(--surface); border: 1px solid var(--border);
+                border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+  .preco-card-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .preco-card-refs  { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+  .preco-row { display: flex; align-items: center; justify-content: space-between;
+               padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .preco-row:last-child { border-bottom: none; }
+  .preco-name  { font-size: 12px; font-weight: 500; }
+  .preco-right { display: flex; align-items: center; gap: 8px; }
+  .preco-val   { font-size: 13px; font-weight: 600; padding: 1px 7px;
+                 border-radius: 5px; }
+  .preco-val.best  { background: var(--green-bg); color: var(--green); }
+  .preco-val.worst { background: var(--red-bg);   color: var(--red);   }
+  .preco-delta { font-size: 11px; padding: 1px 6px; border-radius: 20px; }
+
+  /* ── Delta Table ──────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px;
+          background: var(--surface); border-radius: var(--radius);
+          overflow: hidden; box-shadow: var(--shadow); }
+  thead th { font-size: 11px; font-weight: 600; color: var(--text2);
+             text-align: right; padding: 9px 12px;
+             background: var(--surface2); border-bottom: 1px solid var(--border); }
+  thead th:first-child { text-align: left; }
+  tbody td { padding: 9px 12px; text-align: right;
+             border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { text-align: left; font-weight: 500; }
+  .d-pos  { color: var(--red);   font-weight: 600; }
+  .d-neg  { color: var(--green); font-weight: 600; }
+  .d-zero { color: var(--text3); }
+  .cell-best  { background: var(--green-bg) !important; color: var(--green) !important;
+                font-weight: 600; border-radius: 4px; }
+
+  /* ── Timeline Chart ───────────────────────────────────── */
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+                 gap: 16px; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border);
+                border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .chart-card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .chart-wrap { position: relative; height: 220px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--text2); }
+  .li { display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+  .li.muted { opacity: .3; }
+  .li-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Loading / Error ──────────────────────────────────── */
+  .state { text-align: center; padding: 80px 20px; color: var(--text2); }
+  .state h2 { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+  .state p  { font-size: 13px; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border);
+             border-top-color: var(--text); border-radius: 50%;
+             animation: spin .7s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>⛽ Farol — Competitividade de Compra</h1>
+      <div class="sub">SIM Combustíveis · Acompanhamento diário de preços vs mercado</div>
+    </div>
+    <div id="badge-update" class="badge-update">Carregando...</div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <label>Produto</label>
+    <select id="sel-prod" onchange="render()">
+      <option value="all">Todos</option>
+      <option value="Gasolina">Gasolina</option>
+      <option value="Etanol">Etanol</option>
+      <option value="Diesel S10">Diesel S10</option>
+      <option value="Diesel S500">Diesel S500</option>
+    </select>
+    <div class="sep"></div>
+    <label>Região</label>
+    <select id="sel-reg" onchange="render()">
+      <option value="all">Todas</option>
+      <option value="RS">Esteio / Canoas (RS)</option>
+      <option value="PR">Araucária (PR)</option>
+    </select>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs"></div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="state"><div class="spinner"></div><h2>Buscando dados…</h2><p>Conectando à planilha</p></div>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+// Substitua pela URL gerada ao publicar o Apps Script como Web App
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQsSTEAe5-A2c5O0jPiRsM02mjE6uTZvmptAWhj7aQW9IenKGNuUwKxvOphEeSM18w/exec';
+// ─────────────────────────────────────────────────────────────
+
+const DIST = [
+  { key:'sim',      label:'SIM',          color:'#185FA5' },
+  { key:'vibra',    label:'Vibra',        color:'#3B6D11' },
+  { key:'ipiranga', label:'Ipiranga',     color:'#C98A00' },
+  { key:'raizen',   label:'Shell/Raizen', color:'#A32D2D' },
+];
+const REFS = [
+  { key:'major', label:'Ref. Major', color:'#2C2C2A', dash:[7,4] },
+  { key:'spot',  label:'Ref. Spot',  color:'#888780', dash:[3,4] },
+];
+const SERIES = [...REFS, ...DIST];
+const PRODUTOS = ['Gasolina','Etanol','Diesel S10','Diesel S500'];
+const REGIOES  = [{ key:'RS', label:'Esteio / Canoas (RS)' }, { key:'PR', label:'Araucária (PR)' }];
+
+let RAW = {};
+let DIAS = [];
+let selectedDay = null;
+let charts = {};
+let hidden = {};
+
+// ── BOOT ──────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    RAW = await res.json();
+    DIAS = ordenarDias(Object.keys(RAW));
+    selectedDay = DIAS[0];
+    document.getElementById('badge-update').textContent =
+      'Atualizado · ' + selectedDay;
+    buildTabs();
+    render();
+  } catch(e) {
+    document.getElementById('main').innerHTML =
+      `<div class="state"><h2>Não foi possível carregar os dados</h2>
+       <p>Verifique se a URL do Apps Script está configurada corretamente no painel.<br>
+       Erro: ${e.message}</p></div>`;
+  }
+}
+
+function ordenarDias(dias) {
+  return dias.sort((a,b) => {
+    const pa = parseDia(a), pb = parseDia(b);
+    return pb - pa; // mais recente primeiro
+  });
+}
+function parseDia(s) {
+  const p = s.split('/');
+  if (p.length >= 2) {
+    const d = +p[0], m = +p[1], y = p[2] ? +p[2] : 2026;
+    return new Date(y < 100 ? 2000+y : y, m-1, d).getTime();
+  }
+  return new Date(s).getTime();
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function buildTabs() {
+  document.getElementById('tabs').innerHTML = DIAS.map(d =>
+    `<button class="tab ${d===selectedDay?'active':''}" onclick="selectDay('${d}')">${d}</button>`
+  ).join('');
+}
+function selectDay(d) { selectedDay = d; buildTabs(); destroyCharts(); render(); }
+
+// ── FILTERS ───────────────────────────────────────────────────
+function getProdutos() {
+  const v = document.getElementById('sel-prod').value;
+  return v === 'all' ? PRODUTOS : [v];
+}
+function getRegioes() {
+  const v = document.getElementById('sel-reg').value;
+  return v === 'all' ? REGIOES : REGIOES.filter(r => r.key === v);
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function render() {
+  destroyCharts();
+  const prods = getProdutos();
+  const regs  = getRegioes();
+  const day   = RAW[selectedDay];
+
+  let html = '';
+  html += renderCards(day, prods, regs);
+  html += `<div class="section-title">Preços praticados vs referências de mercado</div>`;
+  html += renderPrecosGrid(day, prods, regs);
+  html += `<div class="section-title">Delta vs referência Major (R$)</div>`;
+  html += renderDeltaTable(day, prods, regs, 'major');
+  html += `<div class="section-title">Evolução temporal — preço por distribuidora</div>`;
+  html += renderChartCards(prods, regs);
+
+  document.getElementById('main').innerHTML = html;
+  renderCharts(prods, regs);
+}
+
+// ── CARDS ─────────────────────────────────────────────────────
+function renderCards(day, prods, regs) {
+  let melhor=0, pior=0, total=0;
+  let deltas = [];
+  regs.forEach(r => prods.forEach(p => {
+    const d = day?.[p]?.[r.key]; if (!d) return;
+    const dv = diff(d.sim, d.major); if (dv===null) return;
+    total++;
+    if (dv < -0.005) melhor++; else if (dv > 0.005) pior++;
+    deltas.push(dv);
+  }));
+  const pct  = total ? Math.round(melhor/total*100) : 0;
+  const avg  = deltas.length ? deltas.reduce((a,b)=>a+b,0)/deltas.length : 0;
+  const avgF = (avg>=0?'+':'') + avg.toFixed(3);
+
+  return `<div class="cards">
+    <div class="card">
+      <div class="card-label">Posicionamento SIM</div>
+      <div class="card-value" style="color:${pct>=50?'var(--green)':'var(--red)'}">${pct}%</div>
+      <div class="card-sub"><span class="pill ${pct>=50?'pill-green':'pill-red'}">${melhor} de ${total} combos abaixo do Major</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Delta médio vs Major</div>
+      <div class="card-value" style="color:${avg<=0?'var(--green)':'var(--red)'}">${avgF}</div>
+      <div class="card-sub">${avg<0?'Comprando abaixo do mercado':avg>0?'Comprando acima do mercado':'Na média do mercado'}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Combos acima do Major</div>
+      <div class="card-value" style="color:${pior>0?'var(--red)':'var(--green)'}">${pior}</div>
+      <div class="card-sub">de ${total} combinações produto × região</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Data de referência</div>
+      <div class="card-value" style="font-size:20px;padding-top:4px">${selectedDay}</div>
+      <div class="card-sub">${prods.length} produto${prods.length>1?'s':''} · ${regs.length} região${regs.length>1?'ões':''}</div>
+    </div>
+  </div>`;
+}
+
+// ── PREÇOS GRID ───────────────────────────────────────────────
+function renderPrecosGrid(day, prods, regs) {
+  let html = '<div class="precos-grid">';
+  regs.forEach(r => prods.forEach(p => {
+    const d = day?.[p]?.[r.key]; if (!d) return;
+    const vals = DIST.map(s => d[s.key]).filter(v => v!==null);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+
+    html += `<div class="preco-card">
+      <div class="preco-card-title">${p} — ${r.key}</div>
+      <div class="preco-card-refs">Major: ${fmt(d.major)} · Spot: ${fmt(d.spot)}</div>`;
+    DIST.forEach(s => {
+      const v = d[s.key]; if (v===null) return;
+      const dv = diff(v, d.major);
+      html += `<div class="preco-row">
+        <span class="preco-name" style="color:${s.color}">${s.label}</span>
+        <div class="preco-right">
+          <span class="preco-val ${v===minV?'best':v===maxV?'worst':''}">${fmt(v)}</span>
+          <span class="preco-delta ${pillCls(dv)}">${fmtD(dv)}</span>
+        </div>
+      </div>`;
+    });
+    if (d.alvo) html += `<div class="preco-row"><span class="preco-name" style="color:var(--text3);font-style:italic">Preço alvo</span><span style="font-size:13px;color:var(--text3);font-style:italic">${fmt(d.alvo)}</span></div>`;
+    html += `</div>`;
+  }));
+  return html + '</div>';
+}
+
+// ── DELTA TABLE ───────────────────────────────────────────────
+function renderDeltaTable(day, prods, regs, ref) {
+  let html = `<div class="table-wrap"><table><thead><tr>
+    <th>Produto / Região</th>
+    ${DIST.map(s=>`<th style="color:${s.color}">${s.label}</th>`).join('')}
+    <th>Ref. Major</th></tr></thead><tbody>`;
+  regs.forEach(r => prods.forEach(p => {
+    const d = day?.[p]?.[r.key]; if (!d) return;
+    const dvs = DIST.map(s => diff(d[s.key], d[ref]));
+    const min = Math.min(...dvs.filter(v=>v!==null));
+    html += `<tr><td>${p} <span style="font-weight:400;color:var(--text3)">${r.label}</span></td>
+      ${dvs.map(dv => `<td class="${dv===min&&dv<0?'cell-best':deltaCls(dv)}">${fmtD(dv)}</td>`).join('')}
+      <td style="color:var(--text3)">${fmt(d[ref])}</td></tr>`;
+  }));
+  return html + '</tbody></table></div>';
+}
+
+// ── CHARTS ────────────────────────────────────────────────────
+function renderChartCards(prods, regs) {
+  let html = `<div class="charts-grid">`;
+  regs.forEach(r => prods.forEach(p => {
+    const id = chartId(p, r.key);
+    html += `<div class="chart-card">
+      <div class="chart-card-title">${p} — ${r.label}</div>
+      <div class="chart-wrap"><canvas id="${id}"></canvas></div>
+      <div class="legend" id="leg-${id}"></div>
+    </div>`;
+  }));
+  return html + '</div>';
+}
+
+function renderCharts(prods, regs) {
+  const labels = [...DIAS].reverse();
+  regs.forEach(r => prods.forEach(p => {
+    const id  = chartId(p, r.key);
+    const el  = document.getElementById(id); if (!el) return;
+
+    const datasets = SERIES.map(s => ({
+      label: s.label,
+      data: labels.map(d => {
+        const rec = RAW[d]?.[p]?.[r.key];
+        return rec ? (rec[s.key] ?? null) : null;
+      }),
+      borderColor:     s.color,
+      backgroundColor: s.color,
+      borderWidth:     s.dash ? 2.2 : (s.key==='sim'?2.2:1.8),
+      borderDash:      s.dash || [],
+      pointRadius:     s.dash ? 4 : 4,
+      pointStyle:      s.dash ? (s.key==='major'?'rectRot':'triangle') : 'circle',
+      pointHoverRadius:6,
+      tension:         0.25,
+      spanGaps:        true,
+      hidden:          !!hidden[s.key]
+    }));
+
+    const allVals = datasets.flatMap(ds=>ds.data.filter(v=>v!==null));
+    const minY = +(Math.min(...allVals)-0.06).toFixed(2);
+    const maxY = +(Math.max(...allVals)+0.06).toFixed(2);
+
+    const c = new Chart(el, {
+      type:'line',
+      data:{ labels, datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            backgroundColor:'#fff', borderColor:'rgba(0,0,0,0.1)', borderWidth:1,
+            titleColor:'#2C2C2A', bodyColor:'#5F5E5A', padding:10, cornerRadius:8,
+            callbacks:{
+              label: ctx => ctx.parsed.y===null ? null : ` ${ctx.dataset.label}: R$ ${ctx.parsed.y.toFixed(2)}`
+            }
+          }
+        },
+        scales:{
+          x:{ grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:11},color:'#888'} },
+          y:{ min:minY, max:maxY,
+              grid:{color:'rgba(0,0,0,0.05)'},
+              ticks:{font:{size:11},color:'#888', callback:v=>'R$ '+v.toFixed(2)} }
+        }
+      }
+    });
+    charts[id] = c;
+    buildChartLegend(id);
+  }));
+}
+
+function buildChartLegend(id) {
+  const cont = document.getElementById('leg-' + id); if (!cont) return;
+  cont.innerHTML = SERIES.map((s,i) => {
+    const isRef = s.dash;
+    const dot = isRef
+      ? `<span style="display:inline-block;width:22px;height:0;border-top:2px ${s.key==='major'?'dashed':'dotted'} ${s.color};vertical-align:middle;margin-bottom:1px"></span>`
+      : `<span class="li-dot" style="background:${s.color}"></span>`;
+    return `<div class="li ${hidden[s.key]?'muted':''}" onclick="toggleSeries('${s.key}',${i},'${id}')">${dot}${s.label}</div>`;
+  }).join('');
+}
+
+function toggleSeries(key, idx, originId) {
+  hidden[key] = !hidden[key];
+  Object.entries(charts).forEach(([id, c]) => {
+    c.data.datasets[idx].hidden = !!hidden[key];
+    c.update();
+    buildChartLegend(id);
+  });
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function chartId(p,r){ return 'c-'+p.replace(/\s/g,'-')+'-'+r; }
+function destroyCharts(){ Object.values(charts).forEach(c=>{ try{c.destroy()}catch(e){} }); charts={}; }
+function fmt(v){ return v!==null&&v!==undefined ? 'R$ '+Number(v).toFixed(2) : '—'; }
+function fmtD(v){ if(v===null)return'—'; return (v>=0?'+':'')+v.toFixed(3); }
+function diff(a,b){ if(a===null||a===undefined||b===null||b===undefined)return null; return +(a-b).toFixed(4); }
+function deltaCls(v){ if(v===null)return'd-zero'; if(v>0.005)return'd-pos'; if(v<-0.005)return'd-neg'; return'd-zero'; }
+function pillCls(v){ if(v===null)return'pill-gray'; if(v>0.005)return'pill-red'; if(v<-0.005)return'pill-green'; return'pill-gray'; }
+
+// ── START ─────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
